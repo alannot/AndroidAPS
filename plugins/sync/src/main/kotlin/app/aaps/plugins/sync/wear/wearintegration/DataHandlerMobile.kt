@@ -611,7 +611,7 @@ class DataHandlerMobile @Inject constructor(
                         rxBus.send(
                             EventMobileToWear(
                                 EventData.ConfirmAction(
-                                    rh.gs(app.aaps.core.ui.R.string.tdd),
+                                    rh.gs(app.aaps.core.ui.R.string.tdd_short),
                                     reloadMessage,
                                     returnCommand = null
                                 )
@@ -626,7 +626,7 @@ class DataHandlerMobile @Inject constructor(
         rxBus.send(
             EventMobileToWear(
                 EventData.ConfirmAction(
-                    rh.gs(app.aaps.core.ui.R.string.tdd),
+                    rh.gs(app.aaps.core.ui.R.string.tdd_short),
                     message,
                     returnCommand = null
                 )
