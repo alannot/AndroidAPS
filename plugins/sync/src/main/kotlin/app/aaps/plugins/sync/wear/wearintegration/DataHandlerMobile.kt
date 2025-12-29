@@ -42,7 +42,6 @@ import app.aaps.core.interfaces.profile.ProfileFunction
 import app.aaps.core.interfaces.profile.ProfileUtil
 import app.aaps.core.interfaces.pump.DetailedBolusInfo
 import app.aaps.core.interfaces.pump.PumpStatusProvider
-import app.aaps.core.interfaces.pump.PumpSync
 import app.aaps.core.interfaces.pump.defs.determineCorrectBolusStepSize
 import app.aaps.core.interfaces.queue.Callback
 import app.aaps.core.interfaces.queue.CommandQueue
@@ -56,9 +55,9 @@ import app.aaps.core.interfaces.rx.weardata.CwfMetadataKey
 import app.aaps.core.interfaces.rx.weardata.EventData
 import app.aaps.core.interfaces.rx.weardata.EventData.LoopStatesList.AvailableLoopState
 import app.aaps.core.interfaces.rx.weardata.LoopStatusData
-import app.aaps.core.interfaces.rx.weardata.TempTargetInfo
-import app.aaps.core.interfaces.rx.weardata.TargetRange
 import app.aaps.core.interfaces.rx.weardata.OapsResultInfo
+import app.aaps.core.interfaces.rx.weardata.TargetRange
+import app.aaps.core.interfaces.rx.weardata.TempTargetInfo
 import app.aaps.core.interfaces.ui.UiInteraction
 import app.aaps.core.interfaces.utils.DateUtil
 import app.aaps.core.interfaces.utils.DecimalFormatter
@@ -438,7 +437,7 @@ class DataHandlerMobile @Inject constructor(
     }
 
     private fun buildLoopStatusData(): LoopStatusData {
-        val tempTarget = persistenceLayer.getTemporaryTargetActiveAt(dateUtil.now())
+        val tempTarget = runBlocking { persistenceLayer.getTemporaryTargetActiveAt(dateUtil.now()) }
         val profile = profileFunction.getProfile()
         val usedAPS = activePlugin.activeAPS
 
@@ -463,14 +462,14 @@ class DataHandlerMobile @Inject constructor(
 
         // Map loop mode
         val loopMode = when (loop.runningMode) {
-            RM.Mode.CLOSED_LOOP -> LoopStatusData.LoopMode.CLOSED
-            RM.Mode.OPEN_LOOP -> LoopStatusData.LoopMode.OPEN
-            RM.Mode.CLOSED_LOOP_LGS -> LoopStatusData.LoopMode.LGS
-            RM.Mode.DISABLED_LOOP -> LoopStatusData.LoopMode.DISABLED
+            RM.Mode.CLOSED_LOOP       -> LoopStatusData.LoopMode.CLOSED
+            RM.Mode.OPEN_LOOP         -> LoopStatusData.LoopMode.OPEN
+            RM.Mode.CLOSED_LOOP_LGS   -> LoopStatusData.LoopMode.LGS
+            RM.Mode.DISABLED_LOOP     -> LoopStatusData.LoopMode.DISABLED
             RM.Mode.SUSPENDED_BY_USER -> LoopStatusData.LoopMode.SUSPENDED
             RM.Mode.DISCONNECTED_PUMP -> LoopStatusData.LoopMode.DISCONNECTED
-            RM.Mode.SUPER_BOLUS -> LoopStatusData.LoopMode.SUPERBOLUS
-            else -> LoopStatusData.LoopMode.UNKNOWN
+            RM.Mode.SUPER_BOLUS       -> LoopStatusData.LoopMode.SUPERBOLUS
+            else                      -> LoopStatusData.LoopMode.UNKNOWN
         }
 
         // Build temp target info
@@ -521,7 +520,7 @@ class DataHandlerMobile @Inject constructor(
             // Determine what to display
             val (displayRate, displayDuration, displayPercent) = if (isLetTempRun) {
                 // Get currently running temp basal from database
-                val currentTbr = persistenceLayer.getTemporaryBasalActiveAt(dateUtil.now())
+                val currentTbr = runBlocking { persistenceLayer.getTemporaryBasalActiveAt(dateUtil.now()) }
 
                 if (currentTbr != null) {
                     // Calculate absolute rate
@@ -558,7 +557,7 @@ class DataHandlerMobile @Inject constructor(
 
                 // For AAPSClient, use current TBR rate if available, otherwise use constrained rate
                 val finalRate = if (!config.APS) {
-                    val currentTbr = persistenceLayer.getTemporaryBasalActiveAt(dateUtil.now())
+                    val currentTbr = runBlocking { persistenceLayer.getTemporaryBasalActiveAt(dateUtil.now()) }
                     currentTbr?.rate ?: constrainedRate
                 } else {
                     constrainedRate
